@@ -1,0 +1,27 @@
+{
+  "name": "duel-server",
+  "version": "0.1.0",
+  "description": "Server for magic duel game with phone controller",
+  "main": "dist/server/index.js",
+  "scripts": {
+    "dev": "tsx watch server/index.ts",
+    "dev:gesture-recognition": "tsx watch server/infrastructure/gesture-recognition/startGestureRecognitionServer.ts",
+    "build": "tsc",
+    "start": "node dist/server/index.js",
+    "start:gesture-recognition": "node dist/server/infrastructure/gesture-recognition/startGestureRecognitionServer.js",
+    "test": "vitest",
+    "test:voice": "bash scripts/test-voice.sh"
+  },
+  "dependencies": {
+    "@mistralai/mistralai": "^2.1.2",
+    "dotenv": "^17.3.1",
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "@types/ws": "^8.5.10",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.1.1"
+  }
+}

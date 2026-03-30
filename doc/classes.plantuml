@@ -1,0 +1,183 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+package "Domain" {
+  class Spells {
+    +id: string
+    +name: string
+    +incantation: string
+    +gestureKey: string
+    +baseDamage: number
+    +manaCost: number
+    +cooldownMs: number
+    +tags: SpellTag[]
+  }
+
+  enum SpellTag {
+    ATTACK
+    DEFENSE
+    CONTROL
+    HEAL
+    DARK_MAGIC
+  }
+
+  class ComboRule {
+    +id: string
+    +name: string
+    +sequence: string[]
+    +multiplier: number
+    +bonusEffect: string
+  }
+
+  class Player {
+    +id: string
+    +name: string
+    +hp: number
+    +mana: number
+    +spellPower: number
+    +spellPrecision: number
+    +activeEffects: Effect[]
+    +cooldowns: Map<string, number>
+  }
+
+  class Effect {
+    +id: string
+    +name: string
+    +durationTurns: number
+    +type: string
+    +value: number
+  }
+
+  class CastAttempt {
+    +playerId: string
+    +spellId: string
+    +spokenText: string
+    +detectedGestureKey: string
+    +timestamp: number
+  }
+
+  class CastResult {
+    +success: boolean
+    +reason: string
+    +damage: number
+    +manaSpent: number
+    +comboApplied: string?
+    +critical: boolean
+  }
+
+  class Duel {
+    +id: string
+    +player1: Player
+    +player2: Player
+    +currentTurnPlayerId: string
+    +history: CastResult[]
+    +status: DuelStatus
+  }
+
+  enum DuelStatus {
+    READY
+    IN_PROGRESS
+    FINISHED
+  }
+
+  class SpellMatcher {
+    +matchesIncantation(spell: Spells, spokenText: string): boolean
+    +matchesGesture(spell: Spells, gestureKey: string): boolean
+  }
+
+  class ComboResolver {
+    +resolve(player: Player, spell: Spells, history: CastResult[]): ComboRule?
+  }
+
+  class DamagePolicy {
+    +compute(spell: Spells, caster: Player, target: Player, combo: ComboRule?): number
+  }
+
+  Duel --> Player
+  Duel --> CastResult
+  Player --> Effect
+  CastResult --> Spells
+  ComboResolver --> ComboRule
+  SpellMatcher --> Spells
+  DamagePolicy --> Spells
+}
+
+package "Application" {
+  interface SpellRepository {
+    +getAll(): Spells[]
+    +getById(id: string): Spells?
+  }
+
+  interface ComboRepository {
+    +getAll(): ComboRule[]
+  }
+
+  interface VoiceRecognizer {
+    +startListening(): void
+    +stopListening(): void
+    +onResult(callback): void
+  }
+
+  interface GestureRecognizer {
+    +startCapture(): void
+    +stopCapture(): void
+    +recognize(points: Point[]): string
+  }
+
+  class StartDuelUseCase {
+    +execute(player1Name: string, player2Name: string): Duel
+  }
+
+  class CastSpellUseCase {
+    +execute(duel: Duel, attempt: CastAttempt): CastResult
+  }
+
+  class EndTurnUseCase {
+    +execute(duel: Duel): Duel
+  }
+
+  class ListSpellsUseCase {
+    +execute(): Spells[]
+  }
+
+  StartDuelUseCase --> SpellRepository
+  CastSpellUseCase --> SpellRepository
+  CastSpellUseCase --> ComboRepository
+  CastSpellUseCase --> SpellMatcher
+  CastSpellUseCase --> ComboResolver
+  CastSpellUseCase --> DamagePolicy
+  ListSpellsUseCase --> SpellRepository
+}
+
+package "Infrastructure" {
+  class InMemorySpellRepository
+  class InMemoryComboRepository
+  class BrowserSpeechRecognizer
+  class MouseGestureRecognizer
+  class DollarOneGestureAdapter
+
+  SpellRepository <|.. InMemorySpellRepository
+  ComboRepository <|.. InMemoryComboRepository
+  VoiceRecognizer <|.. BrowserSpeechRecognizer
+  GestureRecognizer <|.. MouseGestureRecognizer
+  MouseGestureRecognizer --> DollarOneGestureAdapter
+}
+
+package "Presentation (Svelte)" {
+  class DuelStore
+  class SpellSidebar
+  class ArenaCanvas
+  class VoiceCaptureIndicator
+  class DuelHUD
+  class App
+
+  DuelStore --> StartDuelUseCase
+  DuelStore --> CastSpellUseCase
+  DuelStore --> EndTurnUseCase
+  App --> DuelStore
+  App --> SpellSidebar
+  App --> ArenaCanvas
+  App --> VoiceCaptureIndicator
+  App --> DuelHUD
+}
+@enduml
