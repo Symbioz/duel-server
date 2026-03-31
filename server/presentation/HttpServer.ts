@@ -1,9 +1,10 @@
 import * as http from 'http';
 import { getControllerPageHtml } from './ControllerPageGenerator';
-import { RecognizeSpellUseCase } from '../../usecases/RecognizeSpellUseCase';
-import { RecognizeGestureUseCase } from '../../usecases/RecognizeGestureUseCase';
-import { GESTURE_RECOGNITION_BASE_PATH } from '../gesture-recognition/gestureRecognitionHttpContract';
-import { GestureRecognitionController, VoiceSpellController } from '../../presentation';
+import { RecognizeSpellUseCase } from '../usecases/RecognizeSpellUseCase';
+import { RecognizeGestureUseCase } from '../usecases/RecognizeGestureUseCase';
+import { GESTURE_RECOGNITION_BASE_PATH } from '../infrastructure/gesture-recognition/gestureRecognitionHttpContract';
+import { GestureRecognitionController } from './GestureRecognitionController';
+import { VoiceSpellController } from './VoiceSpellController';
 
 
 /**
@@ -29,9 +30,9 @@ export class HttpServer {
     });
   }
 
-  setRecognizeSpellUseCase(useCase: RecognizeSpellUseCase): void {
+  setRecognizeSpellUseCase(useCase: RecognizeSpellUseCase, maxAudioBytes?: number): void {
     this.recognizeSpellUseCase = useCase;
-    this.voiceSpellController = new VoiceSpellController(useCase, this.controllerAccessKey);
+    this.voiceSpellController = new VoiceSpellController(useCase, this.controllerAccessKey, maxAudioBytes);
   }
 
   setRecognizeGestureUseCase(useCase: RecognizeGestureUseCase): void {
@@ -147,3 +148,4 @@ export class HttpServer {
     });
   }
 }
+

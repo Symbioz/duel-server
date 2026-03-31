@@ -1,0 +1,15 @@
+ARG VLLM_BASE_IMAGE=vllm/vllm-openai:latest
+FROM ${VLLM_BASE_IMAGE}
+
+# Voxtral realtime needs audio deps at runtime for dummy/profiling audio inputs.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libsndfile1 \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python3 -m pip install --no-cache-dir --upgrade \
+    "mistral-common[audio]" \
+    soundfile \
+    librosa \
+    soxr
+
+RUN python3 -c "import soundfile, librosa, soxr; print('voxtral-audio-deps-ok')"

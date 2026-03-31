@@ -1,0 +1,16 @@
+node_modules
+dist
+.env
+.env.local
+.git
+.gitignore
+.DS_Store
+*.md
+.vscode
+.idea
+coverage
+.vitest
+vitest.config.ts
+tsconfig.json
+package-lock.json
+

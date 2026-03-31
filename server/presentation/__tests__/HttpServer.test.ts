@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { TranscriptionService } from '../../../common-ports/VoicePorts';
+import { TranscriptionService } from '../../common-ports/VoicePorts';
 import { HttpServer } from '../HttpServer';
-import { RecognizeSpellUseCase } from '../../../usecases/RecognizeSpellUseCase';
+import { RecognizeSpellUseCase } from '../../usecases/RecognizeSpellUseCase';
 
 class RecordingTranscriptionService implements TranscriptionService {
   lastAudioBuffer: Buffer | null = null;
@@ -11,6 +11,14 @@ class RecordingTranscriptionService implements TranscriptionService {
     this.lastAudioBuffer = audioBuffer;
     this.lastMimeType = mimeType;
     return 'expelliarmus';
+  }
+}
+
+class TimeoutTranscriptionService implements TranscriptionService {
+  async transcribe(_audioBuffer: Buffer, _mimeType: string): Promise<string> {
+    const error = new Error('Voice transcription timed out after 1200ms');
+    error.name = 'VoiceTranscriptionTimeoutError';
+    throw error;
   }
 }
 
@@ -91,5 +99,22 @@ describe('HttpServer /voice/spell', () => {
     expect(response.status).toBe(401);
     expect(transcriptionService.lastAudioBuffer).toBeNull();
   });
+
+  it('returns 504 when transcription times out', async () => {
+    server = new HttpServer(0, '127.0.0.1', 'shared-secret');
+    server.setRecognizeSpellUseCase(new RecognizeSpellUseCase(new TimeoutTranscriptionService()));
+    await server.listen();
+
+    const response = await fetch(`${getBaseUrl(server)}/voice/spell?k=shared-secret`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'audio/webm' },
+      body: Buffer.from([1, 2, 3])
+    });
+
+    expect(response.status).toBe(504);
+    const body = (await response.json()) as { error?: string };
+    expect(body.error).toContain('timeout');
+  });
 });
+
 

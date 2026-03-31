@@ -1,0 +1,19 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install build dependencies
+RUN apk add --no-cache python3 make g++ curl
+
+# Copy package files
+COPY package.json package-lock.json* ./
+
+# Install all dependencies (including devDependencies for development)
+RUN npm ci
+
+# Expose the main port
+EXPOSE 8787
+
+# Default command (will be overridden by docker-compose)
+CMD ["npm", "run", "dev"]
+

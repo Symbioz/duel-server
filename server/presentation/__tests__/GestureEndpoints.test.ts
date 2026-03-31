@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { HttpServer } from '../HttpServer';
-import { RecognizeGestureUseCase } from '../../../usecases/RecognizeGestureUseCase';
-import { GestureRecognitionResult } from '../../../core-logic/entities/GestureRecognition';
+import { RecognizeGestureUseCase } from '../../usecases/RecognizeGestureUseCase';
+import { GestureRecognitionResult } from '../../core-logic/entities/GestureRecognition';
 import {
   GESTURE_RECOGNITION_HEALTH_PATH,
   GESTURE_RECOGNITION_RECOGNIZE_PATH,
   GESTURE_RECOGNITION_WARMUP_PATH,
   FrontGestureResponse
-} from '../../gesture-recognition/gestureRecognitionHttpContract';
+} from '../../infrastructure/gesture-recognition/gestureRecognitionHttpContract';
 
 // ---------------------------------------------------------------------------
 // Stub use case — no SVG loading, predictable results
@@ -243,4 +243,5 @@ describe('HttpServer — gesture recognition endpoints', () => {
     expect(res.status).toBe(503);
   });
 });
+
 

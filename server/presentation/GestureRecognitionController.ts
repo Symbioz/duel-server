@@ -4,7 +4,10 @@ import { GestureRecognitionResult } from '../core-logic/entities/GestureRecognit
 import {
   FrontGestureResponse,
   FrontGestureTopMatch,
-  FrontGestureRecognizeRequest
+  FrontGestureRecognizeRequest,
+  GESTURE_RECOGNITION_HEALTH_PATH,
+  GESTURE_RECOGNITION_WARMUP_PATH,
+  GESTURE_RECOGNITION_RECOGNIZE_PATH
 } from '../infrastructure/gesture-recognition/gestureRecognitionHttpContract';
 
 const MAX_GESTURE_BYTES = 512 * 1024; // 512 KB
@@ -167,17 +170,17 @@ export class GestureRecognitionController {
       return;
     }
 
-    if (req.method === 'GET' && path === '/api/gesture-recognition/health') {
+    if (req.method === 'GET' && path === GESTURE_RECOGNITION_HEALTH_PATH) {
       await this.handleHealth(res);
       return;
     }
 
-    if (req.method === 'POST' && path === '/api/gesture-recognition/warmup') {
+    if (req.method === 'POST' && path === GESTURE_RECOGNITION_WARMUP_PATH) {
       await this.handleWarmup(res);
       return;
     }
 
-    if (req.method === 'POST' && path === '/api/gesture-recognition/recognize') {
+    if (req.method === 'POST' && path === GESTURE_RECOGNITION_RECOGNIZE_PATH) {
       await this.handleRecognize(req, res);
       return;
     }

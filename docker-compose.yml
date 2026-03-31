@@ -1,0 +1,97 @@
+version: '3.9'
+
+services:
+  # Main application server
+  duel-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: duel-server
+    ports:
+      - "${PORT:-8787}:8787"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8787
+      - CONTROLLER_ACCESS_KEY=${CONTROLLER_ACCESS_KEY:-}
+      - MAX_CONTROLLERS=${MAX_CONTROLLERS:-5}
+      - WS_MAX_PAYLOAD_BYTES=${WS_MAX_PAYLOAD_BYTES:-4096}
+      - WS_RATE_LIMIT_PER_SEC=${WS_RATE_LIMIT_PER_SEC:-120}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY:-dummy-local-key}
+      - VOXTRAL_BASE_URL=${VOXTRAL_BASE_URL:-http://vllm-server:8000}
+      - VOXTRAL_MODEL=${VOXTRAL_MODEL:-mistralai/Voxtral-Mini-4B-Realtime-2602}
+      - VOXTRAL_TIMEOUT_MS=${VOXTRAL_TIMEOUT_MS:-1800}
+      - VOICE_MAX_AUDIO_BYTES=${VOICE_MAX_AUDIO_BYTES:-1048576}
+    depends_on:
+      - vllm-server
+    networks:
+      - duel-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8787/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Optional: vLLM server for local Voxtral model (for voice recognition)
+  # Comment this service if you're using Mistral API instead
+  vllm-server:
+    image: duel-server/vllm-voxtral:local
+    build:
+      context: .
+      dockerfile: Dockerfile.voxtral
+      args:
+        VLLM_BASE_IMAGE: ${VLLM_IMAGE:-vllm/vllm-openai:latest}
+    container_name: vllm-server
+    ports:
+      - "${VLLM_PORT:-8000}:8000"
+    environment:
+      - VLLM_DISABLE_COMPILE_CACHE=1
+      - VLLM_LOGGING_LEVEL=${VLLM_LOGGING_LEVEL:-INFO}
+      - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    volumes:
+      - huggingface_cache:/root/.cache/huggingface
+    networks:
+      - duel-network
+    command:
+      - mistralai/Voxtral-Mini-4B-Realtime-2602
+      - --compilation_config
+      - '{"cudagraph_mode": "PIECEWISE"}'
+      - --gpu-memory-utilization
+      - "0.92"
+      - --max-model-len
+      - "8192"
+      - --max-num-seqs
+      - "1"
+      - --max-num-batched-tokens
+      - "512"
+      - --enforce-eager
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 40
+      start_period: 10m
+    # Allocate more resources if available
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+        limits:
+          memory: 16G
+
+networks:
+  duel-network:
+    driver: bridge
+
+volumes:
+  huggingface_cache:
+    driver: local
+

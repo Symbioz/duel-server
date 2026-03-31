@@ -1,4 +1,4 @@
-import { HttpServer } from './infrastructure/http/HttpServer';
+import { HttpServer } from './presentation/HttpServer';
 import { loadAppConfig } from '../app.config';
 import { DependencyInjection } from './app-configuration/dependencyInjection';
 import { getLocalIpAddress } from './infrastructure/utils/networkUtils';

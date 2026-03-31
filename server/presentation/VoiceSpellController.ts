@@ -1,17 +1,22 @@
 import * as http from 'http';
 import { RecognizeSpellUseCase } from '../usecases/RecognizeSpellUseCase';
 
-const MAX_AUDIO_BYTES = 10 * 1024 * 1024; // 10 MB
+const DEFAULT_MAX_AUDIO_BYTES = 1024 * 1024; // 1 MB
 
 /**
  * Controller for voice spell recognition API endpoints.
  * Handles /voice/spell route.
  */
 export class VoiceSpellController {
+  private readonly maxAudioBytes: number;
+
   constructor(
     private recognizeSpellUseCase: RecognizeSpellUseCase,
-    private controllerAccessKey: string
-  ) {}
+    private controllerAccessKey: string,
+    maxAudioBytes: number = DEFAULT_MAX_AUDIO_BYTES
+  ) {
+    this.maxAudioBytes = maxAudioBytes;
+  }
 
   /**
    * POST /voice/spell?k=<access-key>
@@ -53,9 +58,9 @@ export class VoiceSpellController {
     let totalSize = 0;
     for await (const chunk of req) {
       totalSize += (chunk as Buffer).length;
-      if (totalSize > MAX_AUDIO_BYTES) {
+      if (totalSize > this.maxAudioBytes) {
         res.writeHead(413, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Audio payload too large (max 10 MB)' }));
+        res.end(JSON.stringify({ error: `Audio payload too large (max ${this.maxAudioBytes} bytes)` }));
         return;
       }
       chunks.push(chunk as Buffer);
@@ -68,9 +73,21 @@ export class VoiceSpellController {
       return;
     }
 
-    const result = await this.recognizeSpellUseCase.execute(audioBuffer, contentType);
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(result));
+    try {
+      const result = await this.recognizeSpellUseCase.execute(audioBuffer, contentType);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(result));
+    } catch (error) {
+      const isTimeout =
+        error instanceof Error &&
+        (error.name === 'VoiceTranscriptionTimeoutError' || error.message.includes('timed out'));
+
+      const statusCode = isTimeout ? 504 : 500;
+      const message = isTimeout ? 'Voice transcription timeout' : 'Voice transcription failed';
+
+      res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: message }));
+    }
   }
 }
 

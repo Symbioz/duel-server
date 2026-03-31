@@ -7,5 +7,9 @@
  */
 
 export { GestureRecognitionController } from './GestureRecognitionController';
+export { createGestureRecognitionHttpController } from './GestureRecognitionHttpController';
+export { createGestureRecognitionHttpServer } from './GestureRecognitionHttpServer';
+export { HttpServer } from './HttpServer';
+export { getControllerPageHtml } from './ControllerPageGenerator';
 export { VoiceSpellController } from './VoiceSpellController';
 

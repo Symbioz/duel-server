@@ -12,7 +12,7 @@ import { GestureControllerBridge } from '../infrastructure/gesture-session/Gestu
 import { ControllerSessionStore } from '../infrastructure/websocket/controllerSessionStore';
 import { VoxtralTranscriptionService } from '../infrastructure/voice/VoxtralTranscriptionService';
 import { GestureRecognitionBackend } from '../infrastructure/gesture-recognition/GestureRecognitionBackend';
-import { HttpServer } from '../infrastructure/http/HttpServer';
+import { HttpServer } from '../presentation/HttpServer';
 import { SecurityConfig } from './SecurityConfig';
 import { VoxtralConfig } from '../../app.config';
 
@@ -63,9 +63,10 @@ export class DependencyInjection {
         apiKey: voxtralConfig.apiKey,
         baseUrl: voxtralConfig.baseUrl ?? undefined,
         model: voxtralConfig.model,
+        timeoutMs: voxtralConfig.timeoutMs,
       });
       const recognizeSpellUseCase = new RecognizeSpellUseCase(transcriptionService);
-      httpServer.setRecognizeSpellUseCase(recognizeSpellUseCase);
+      httpServer.setRecognizeSpellUseCase(recognizeSpellUseCase, voxtralConfig.maxAudioBytes);
       console.log(`[Voice] Spell recognition enabled (model: ${voxtralConfig.model})`);
     } else {
       console.log('[Voice] Spell recognition disabled (set MISTRAL_API_KEY to enable)');

@@ -9,6 +9,8 @@ describe('app.config', () => {
     expect(config.port).toBe(8787);
     expect(config.envFilePath).toBe('.env');
     expect(config.security.maxControllers).toBe(5);
+    expect(config.voxtral.timeoutMs).toBe(1800);
+    expect(config.voxtral.maxAudioBytes).toBe(1024 * 1024);
   });
 
   it('reads runtime and security options from env', () => {
@@ -20,7 +22,9 @@ describe('app.config', () => {
       MAX_CONTROLLERS: '5',
       WS_RATE_LIMIT_PER_SEC: '90',
       WS_MAX_PAYLOAD_BYTES: '2048',
-      ALLOWED_ORIGINS: 'https://duel.example.com'
+      ALLOWED_ORIGINS: 'https://duel.example.com',
+      VOXTRAL_TIMEOUT_MS: '1200',
+      VOICE_MAX_AUDIO_BYTES: '524288'
     });
 
     expect(config.host).toBe('127.0.0.1');
@@ -31,6 +35,8 @@ describe('app.config', () => {
     expect(config.security.wsRateLimitPerSecond).toBe(90);
     expect(config.security.wsMaxPayloadBytes).toBe(2048);
     expect(config.security.allowedOrigins).toEqual(['https://duel.example.com']);
+    expect(config.voxtral.timeoutMs).toBe(1200);
+    expect(config.voxtral.maxAudioBytes).toBe(524288);
   });
 });
 

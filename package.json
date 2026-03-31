@@ -5,12 +5,21 @@
   "main": "dist/server/index.js",
   "scripts": {
     "dev": "tsx watch server/index.ts",
+    "dev:with-voxtral": "npm run voxtral:up && npm run dev",
     "dev:gesture-recognition": "tsx watch server/infrastructure/gesture-recognition/startGestureRecognitionServer.ts",
     "build": "tsc",
     "start": "node dist/server/index.js",
+    "start:with-voxtral": "npm run voxtral:up && npm run start",
     "start:gesture-recognition": "node dist/server/infrastructure/gesture-recognition/startGestureRecognitionServer.js",
     "test": "vitest",
-    "test:voice": "bash scripts/test-voice.sh"
+    "test:voice": "bash scripts/test-voice.sh",
+    "voxtral:up": "docker compose -f docker-compose.voxtral.yml up -d",
+    "voxtral:rebuild": "docker compose -f docker-compose.voxtral.yml up -d --build --force-recreate vllm-server",
+    "voxtral:down": "docker compose -f docker-compose.voxtral.yml down",
+    "voxtral:logs": "docker compose -f docker-compose.voxtral.yml logs -f vllm-server",
+    "voxtral:status": "docker compose -f docker-compose.voxtral.yml ps",
+    "voxtral:health": "curl -fsS http://localhost:${VLLM_PORT:-8000}/health",
+    "voxtral:doctor": "bash scripts/voxtral-doctor.sh"
   },
   "dependencies": {
     "@mistralai/mistralai": "^2.1.2",

@@ -38,8 +38,8 @@ Variables principales :
 Variables voix (Voxtral) :
 
 - `MISTRAL_API_KEY` : active la reconnaissance vocale
-- `VOXTRAL_MODEL` : défaut `voxtral-mini-latest`
-- `VOXTRAL_BASE_URL` : optionnel, pour pointer vers un serveur local compatible API (`http://localhost:8000/v1`)
+- `VOXTRAL_MODEL` : défaut `mistralai/Voxtral-Mini-4B-Realtime-2602`
+- `VOXTRAL_BASE_URL` : optionnel, pour pointer vers un serveur local compatible API (`http://localhost:8000`)
 
 Si `MISTRAL_API_KEY` est absent, le serveur démarre quand même, mais `POST /voice/spell` renvoie `503`.
 
@@ -51,11 +51,23 @@ Développement :
 npm run dev
 ```
 
+Développement avec Voxtral local (Docker dédié) :
+
+```bash
+npm run dev:with-voxtral
+```
+
 Build + production :
 
 ```bash
 npm run build
 npm start
+```
+
+Run avec Voxtral local déjà monté :
+
+```bash
+npm run start:with-voxtral
 ```
 
 Tests :
@@ -117,8 +129,13 @@ Réponse JSON :
 
 Notes :
 
-- taille max de payload audio : 10 MB,
+- taille max de payload audio : 1 MB (par défaut),
 - en cas de sort non reconnu : `spellName` peut être `null`.
+
+Par défaut, le serveur applique un mode fail-fast pour la voix :
+
+- `VOXTRAL_TIMEOUT_MS=1800`
+- `VOICE_MAX_AUDIO_BYTES=1048576` (1 MB)
 
 ## Tester rapidement la voix
 
@@ -145,6 +162,39 @@ Le script :
 
 ## Voxtral en local (optionnel)
 
+Commande rapide avec Docker dedie :
+
+```bash
+npm run voxtral:up
+npm run voxtral:rebuild
+npm run voxtral:status
+npm run voxtral:health
+npm run voxtral:doctor
+```
+
+Si `voxtral:doctor` echoue avec `libnvidia-ml.so.1` et que Docker vient de Snap,
+utilise Docker CE (apt) + nvidia-container-toolkit (recommande pour vLLM GPU).
+
+Si `vllm-server` boucle avec une erreur `soundfile is not installed`, reconstruis
+l'image locale Voxtral (elle installe les dependances audio) : `npm run voxtral:rebuild`.
+
+Si les logs vLLM montrent `cudaGetDeviceCount ... Error 804`, c'est generalement
+un decalage entre le runtime CUDA de l'image et le driver NVIDIA host.
+Dans ce cas, soit :
+
+- mettre a jour le driver NVIDIA host (recommande),
+- soit epingler une image vLLM plus ancienne via `VLLM_IMAGE` dans `.env`.
+
+Si les logs vLLM montrent `cudaGetDeviceCount ... Error 804`, c'est generalement
+un decalage entre le runtime CUDA de l'image et le driver NVIDIA host.
+Dans ce cas, mets a jour le driver NVIDIA, puis relance `npm run voxtral:doctor`.
+
+Puis pour arreter :
+
+```bash
+npm run voxtral:down
+```
+
 Exemple de lancement vLLM avec dépendances Python :
 
 ```bash
@@ -155,16 +205,16 @@ source .venv/bin/activate
 # Installer les dépendances (une fois, ou après chaque pull si requirements.txt change)
 pip install -r requirements.txt
 
-# Lancer le serveur vLLM
-vllm serve mistralai/Voxtral-Mini-3B-2507 --port 8000
+# Lancer le serveur vLLM (mode recommandé par la model card)
+VLLM_DISABLE_COMPILE_CACHE=1 vllm serve mistralai/Voxtral-Mini-4B-Realtime-2602 --compilation_config '{"cudagraph_mode": "PIECEWISE"}' --port 8000
 ```
 
 Puis dans `.env` :
 
 ```bash
 MISTRAL_API_KEY=dummy-local-key
-VOXTRAL_BASE_URL=http://localhost:8000/v1
-VOXTRAL_MODEL=mistralai/Voxtral-Mini-3B-2507
+VOXTRAL_BASE_URL=http://localhost:8000
+VOXTRAL_MODEL=mistralai/Voxtral-Mini-4B-Realtime-2602
 ```
 
 **Note :** Le dossier `.venv/` n'est pas commité (voir `.gitignore`). Sur une autre machine, réexécutez les 3 commandes ci-dessus.

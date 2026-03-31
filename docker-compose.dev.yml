@@ -1,0 +1,26 @@
+version: '3.9'
+
+# Development docker-compose with hot-reload and useful tools
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  duel-server:
+    # Override to use development mode with hot-reload
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev
+    environment:
+      - NODE_ENV=development
+      - VOXTRAL_BASE_URL=http://vllm-server:8000
+      - VOXTRAL_MODEL=mistralai/Voxtral-Mini-4B-Realtime-2602
+      - VOXTRAL_TIMEOUT_MS=1800
+      - VOICE_MAX_AUDIO_BYTES=1048576
+
+  vllm-server:
+    # Keep vLLM service but make it optional for development
+    restart: unless-stopped
+

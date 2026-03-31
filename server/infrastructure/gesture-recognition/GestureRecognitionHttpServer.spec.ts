@@ -3,7 +3,7 @@ import { AddressInfo } from 'node:net';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { GestureRecognitionBackend } from './GestureRecognitionBackend';
-import { createGestureRecognitionHttpServer } from './GestureRecognitionHttpServer';
+import { createGestureRecognitionHttpController } from '../../presentation/GestureRecognitionHttpController';
 import {
   GESTURE_RECOGNITION_HEALTH_PATH,
   GESTURE_RECOGNITION_RECOGNIZE_PATH,
@@ -19,7 +19,7 @@ async function listen(port = 0): Promise<{ serverUrl: string; close: () => Promi
       minScoreThreshold: 0.2
     }
   });
-  const httpServer = createGestureRecognitionHttpServer({ backend });
+  const httpServer = createGestureRecognitionHttpController({ backend });
 
   httpServer.listen(port, '127.0.0.1');
   await once(httpServer, 'listening');

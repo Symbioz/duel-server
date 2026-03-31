@@ -4,7 +4,9 @@ import { buildSecurityConfigFromEnv, SecurityConfig } from './server/app-configu
 const DEFAULT_PORT = 8787;
 const DEFAULT_HOST = '0.0.0.0';
 const DEFAULT_ENV_FILE_PATH = '.env';
-const DEFAULT_VOXTRAL_MODEL = 'voxtral-mini-latest';
+const DEFAULT_VOXTRAL_MODEL = 'mistralai/Voxtral-Mini-4B-Realtime-2602';
+const DEFAULT_VOXTRAL_TIMEOUT_MS = 1800;
+const DEFAULT_VOICE_MAX_AUDIO_BYTES = 1024 * 1024;
 
 export interface VoxtralConfig {
   /** Mistral API key. If null, the /voice/spell endpoint is disabled. */
@@ -13,6 +15,10 @@ export interface VoxtralConfig {
   baseUrl: string | null;
   /** Voxtral model to use. */
   model: string;
+  /** Timeout for the transcription request in milliseconds. */
+  timeoutMs: number;
+  /** Max accepted audio payload for low latency. */
+  maxAudioBytes: number;
 }
 
 export interface AppConfig {
@@ -32,6 +38,15 @@ function parsePort(value: string | undefined): number {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : DEFAULT_PORT;
 }
 
+function parsePositiveInt(value: string | undefined, fallback: number): number {
+  if (!value) {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 export function buildAppConfigFromEnv(env: NodeJS.ProcessEnv = process.env): AppConfig {
   return {
     host: env.HOST?.trim() || DEFAULT_HOST,
@@ -42,6 +57,8 @@ export function buildAppConfigFromEnv(env: NodeJS.ProcessEnv = process.env): App
       apiKey: env.MISTRAL_API_KEY?.trim() || null,
       baseUrl: env.VOXTRAL_BASE_URL?.trim() || null,
       model: env.VOXTRAL_MODEL?.trim() || DEFAULT_VOXTRAL_MODEL,
+      timeoutMs: parsePositiveInt(env.VOXTRAL_TIMEOUT_MS, DEFAULT_VOXTRAL_TIMEOUT_MS),
+      maxAudioBytes: parsePositiveInt(env.VOICE_MAX_AUDIO_BYTES, DEFAULT_VOICE_MAX_AUDIO_BYTES),
     },
   };
 }
